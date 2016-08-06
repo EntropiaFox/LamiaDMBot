@@ -46,7 +46,7 @@ class Roll:
 			pass
 
 	@staticmethod
-	def isvalidroll(rollparams):
+	def is_valid_roll(rollparams):
 		try:
 			roll_multiplier = rollparams.split("d")[0]
 			roll_basedie = rollparams.split("d")[1]

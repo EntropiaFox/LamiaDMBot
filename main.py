@@ -11,7 +11,7 @@ bot.
 """
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import logging, sqlite3
+import logging, sqlite3, ConfigParser, os
 from roll import *
 from storage import *
 from char import *
@@ -23,20 +23,48 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 #Token declaration
-TOKEN = "Your Token Here"
+TOKEN = "TOKEN"
+
+#Optional secret declaration, so only those who know it may use the bot
+SECRET = ""
 
 #Version information
-VERSION = "v0.1.0"
+VERSION = "v0.2.0"
+
+# Define a few helper functions
+
+def readconfig(config_filename='lamia.cfg'):
+	config = ConfigParser.ConfigParser()
+	if not os.path.isfile(config_filename): #if the config file doesn't exist already, we'll create one
+		config_file = open(config_filename, 'w')
+		config.add_section('main')
+		config.set('main', 'TOKEN', 'TOKEN')
+		config.set('main', 'SECRET', '')
+		config.write(config_file)
+		config_file.close()
+	else:
+		global TOKEN, SECRET
+		config.read(config_filename)
+		logger.info("Read token: %s", config.get('main', 'token'))
+		TOKEN = config.get('main', 'token')
+		SECRET = config.get('main', 'secret')
+	return config
+
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.')
+    # If secret is not set, register unconditionally
+    if SECRET == "":
+    	db = LamiaDB()
+    	db.register_user(update.message.from_user.id)
+    	db.conn.close()
 
 
 def help(bot, update):
     bot.sendMessage(update.message.chat_id, text='/roll xdy(+/-)z - Rolls X Y-sided dice with Z modifier. Add "!" at the end to use exploding dice.')
-	bot.sendMessage(update.message.chat_id, text='/sroll RollName (xdy(+/-)z) - Lets you store rolls for future use. Give the roll an identifier and then call it by name.')
+    bot.sendMessage(update.message.chat_id, text='/sroll RollName (xdy(+/-)z) - Lets you store rolls for future use. Give the roll an identifier and then call it by name.')
 
 
 def echo(bot, update):
@@ -48,7 +76,7 @@ def error(bot, update, error):
 
 def rolldie(bot, update, args):
     roll = Roll(args[0])
-    bot.sendMessage(update.message.chat_id, text=' '.join(args))
+    #bot.sendMessage(update.message.chat_id, text=' '.join(args))
     if len(roll.result) > 0:
     	bot.sendMessage(update.message.chat_id, text="Your rolls: " + ' '.join(map(str, roll.result)) + " | (" + ("+" if (roll.modifier >= 0) else "") + str(roll.modifier) + ") | =" + str(roll.sum))
     else:
@@ -78,46 +106,57 @@ def storedroll(bot, update, args):
 		c.execute('SELECT roll FROM rolls WHERE name=?', t)
 		retrieved_roll = c.fetchone()
 		if retrieved_roll == None:
-			t = (sroll_name, sroll_value, )
-			c.execute('INSERT INTO rolls (name, roll) VALUES (?, ?)', t)
-			db.conn.commit()
-			bot.sendMessage(update.message.chat_id, text="New roll stored.")
+			if Roll.is_valid_roll(sroll_value):
+				t = (sroll_name, sroll_value, )
+				c.execute('INSERT INTO rolls (name, roll) VALUES (?, ?)', t)
+				db.conn.commit()
+				bot.sendMessage(update.message.chat_id, text="New roll stored.")
+			else:
+				bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.")
 		else:
 			bot.sendMessage(update.message.chat_id, text="Error: There is a stored roll with the same name.")
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
 
-	bot.sendMessage(update.message.chat_id, text=' '.join(args))
+	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	db.conn.close()
 
 
 def main():
-    # Create the EventHandler and pass it your bot's token.
-    updater = Updater(TOKEN)
+	try:
+		# Read the configuration for the bot
+		config = readconfig()
 
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+		# Create the EventHandler and pass it your bot's token.
+		updater = Updater(TOKEN)
 
-    # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("roll", rolldie, pass_args=True))
-    dp.add_handler(CommandHandler("sroll", storedroll, pass_args=True))
+		# Get the dispatcher to register handlers
+		dp = updater.dispatcher
 
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler([Filters.text], echo))
+		# on different commands - answer in Telegram
+		dp.add_handler(CommandHandler("start", start))
+		dp.add_handler(CommandHandler("help", help))
+		dp.add_handler(CommandHandler("roll", rolldie, pass_args=True))
+		dp.add_handler(CommandHandler("sroll", storedroll, pass_args=True))
 
-    # log all errors
-    dp.add_error_handler(error)
+		# on noncommand i.e message - echo the message on Telegram
+		dp.add_handler(MessageHandler([Filters.text], echo))
 
-    # Start the Bot
-    updater.start_polling()
+		# log all errors
+		dp.add_error_handler(error)
 
-    # Run the bot until the you presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
+		# Start the Bot
+		updater.start_polling()
 
+		# Run the bot until the you presses Ctrl-C or the process receives SIGINT,
+		# SIGTERM or SIGABRT. This should be used most of the time, since
+		# start_polling() is non-blocking and will stop the bot gracefully.
+		updater.idle()
+
+	except:
+		#Exception handling
+		logger.info("Token value: %s", TOKEN)
+		logger.exception("Exception raised.") 
 
 if __name__ == '__main__':
-    main()
+	main()
