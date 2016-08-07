@@ -45,7 +45,7 @@ def readconfig(config_filename='lamia.cfg'):
 	else:
 		global TOKEN, SECRET
 		config.read(config_filename)
-		logger.info("Read token: %s", config.get('main', 'token'))
+		#logger.info("Read token: %s", config.get('main', 'token'))
 		TOKEN = config.get('main', 'token')
 		SECRET = config.get('main', 'secret')
 	return config
@@ -159,7 +159,6 @@ def main():
 
 	except:
 		#Exception handling
-		logger.info("Token value: %s", TOKEN)
 		logger.exception("Exception raised.") 
 
 if __name__ == '__main__':
