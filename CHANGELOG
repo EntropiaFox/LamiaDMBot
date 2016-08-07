@@ -1,3 +1,6 @@
+v0.3.0
+- Added Drop and Keep capability to roll parser
+
 v0.2.0
 - Loading Telegram bot token from a separate file (With 'lamia.cfg' as its name) instead of a hardcoded value.
 - New table "users" in the database, needed for future user-specific rolls and characters. Add it manually if you don't wish to lose any stored rolls, or simply delete it and let LamiaDMBot rebuild the database.

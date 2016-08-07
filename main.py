@@ -29,7 +29,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.2.0"
+VERSION = "v0.3.0"
 
 # Define a few helper functions
 
@@ -63,8 +63,12 @@ def start(bot, update):
 
 
 def help(bot, update):
-    bot.sendMessage(update.message.chat_id, text='/roll xdy(+/-)z - Rolls X Y-sided dice with Z modifier. Add "!" at the end to use exploding dice.')
-    bot.sendMessage(update.message.chat_id, text='/sroll RollName (xdy(+/-)z) - Lets you store rolls for future use. Give the roll an identifier and then call it by name.')
+    bot.sendMessage(update.message.chat_id, text="""/roll xdy(D/K)a(+/-)z - Rolls X Y-sided dice with Z modifier.
+Other optional arguments:
+- Add "!" at the end to use exploding dice.
+- Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
+- Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
+/sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name.""")
 
 
 def echo(bot, update):
