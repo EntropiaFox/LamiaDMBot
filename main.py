@@ -29,7 +29,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.3.0"
+VERSION = "v0.3.1"
 
 # Define a few helper functions
 
@@ -53,13 +53,15 @@ def readconfig(config_filename='lamia.cfg'):
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
-def start(bot, update):
+def start(bot, update, args):
     bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.')
-    # If secret is not set, register unconditionally
-    if SECRET == "":
+    # If secret is not set, register unconditionally. If secret is set, register when user knows said secret
+    if (SECRET == "") or (args[0] == SECRET):
     	db = LamiaDB()
-    	db.register_user(update.message.from_user.id)
+    	if db.register_user(update.message.from_user.id):
+    		bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
     	db.conn.close()
+
 
 
 def help(bot, update):
@@ -68,7 +70,10 @@ Other optional arguments:
 - Add "!" at the end to use exploding dice.
 - Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
-/sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name.""")
+/sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name. Requires user registration.
+/sroll RollName - Lets you recall a stored roll.
+/newchar CharacterName - Lets you register a new character. Requires user registration.
+/char CharacterName - Displays the name and attributes of a given character.""")
 
 
 def echo(bot, update):
@@ -82,19 +87,20 @@ def rolldie(bot, update, args):
     roll = Roll(args[0])
     #bot.sendMessage(update.message.chat_id, text=' '.join(args))
     if len(roll.result) > 0:
-    	bot.sendMessage(update.message.chat_id, text="Your rolls: " + ' '.join(map(str, roll.result)) + " | (" + ("+" if (roll.modifier >= 0) else "") + str(roll.modifier) + ") | =" + str(roll.sum))
+    	bot.sendMessage(update.message.chat_id, text="Your rolls: " + ' '.join(map(str, roll.result)) + " | (" + ("+" if (roll.modifier > 0) else "") + str(roll.modifier) + ") | =" + str(roll.sum))
     else:
 	bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.")
 
 def storedroll(bot, update, args):
 	db = LamiaDB()
+	userid = update.message.from_user.id
 	#check in which case we're in: is there a single argument?
 	if len(args) == 1: #single argument
 		#Then we're looking for a previously stored roll
 		sroll_name = args[0]
 		c = db.conn.cursor()
-		t = (sroll_name, )
-		c.execute('SELECT roll FROM rolls WHERE name=?', t)
+		t = (sroll_name, userid, )
+		c.execute('SELECT roll FROM rolls WHERE name=? AND users_id=?', t)
 		retrieved_roll = c.fetchone()
 		if not (retrieved_roll == None):
 			rolldie(bot, update, retrieved_roll)
@@ -106,13 +112,13 @@ def storedroll(bot, update, args):
 		sroll_name = args[0]
 		sroll_value = args[1]
 		c = db.conn.cursor()
-		t = (sroll_name, )
-		c.execute('SELECT roll FROM rolls WHERE name=?', t)
+		t = (sroll_name, userid, )
+		c.execute('SELECT roll FROM rolls WHERE name=? AND users_id=?', t)
 		retrieved_roll = c.fetchone()
 		if retrieved_roll == None:
 			if Roll.is_valid_roll(sroll_value):
-				t = (sroll_name, sroll_value, )
-				c.execute('INSERT INTO rolls (name, roll) VALUES (?, ?)', t)
+				t = (sroll_name, sroll_value, userid, )
+				c.execute('INSERT INTO rolls (name, roll, users_id) VALUES (?, ?, ?)', t)
 				db.conn.commit()
 				bot.sendMessage(update.message.chat_id, text="New roll stored.")
 			else:
@@ -138,7 +144,7 @@ def main():
 		dp = updater.dispatcher
 
 		# on different commands - answer in Telegram
-		dp.add_handler(CommandHandler("start", start))
+		dp.add_handler(CommandHandler("start", start, pass_args=True))
 		dp.add_handler(CommandHandler("help", help))
 		dp.add_handler(CommandHandler("roll", rolldie, pass_args=True))
 		dp.add_handler(CommandHandler("sroll", storedroll, pass_args=True))
