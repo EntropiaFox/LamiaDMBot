@@ -72,8 +72,10 @@ Other optional arguments:
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
 /sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name. Requires user registration.
 /sroll RollName - Lets you recall a stored roll.
-/newchar CharacterName - Lets you register a new character. Requires user registration.
-/char CharacterName - Displays the name and attributes of a given character.""")
+/listroll - Provides a list of all the stored rolls you have.
+/delroll Roll - Lets you delete a stored roll.
+/newchar CharacterName - Lets you register a new character. Requires user registration. (TO BE IMPLEMENTED)
+/char CharacterName - Displays the name and attributes of a given character. (TO BE IMPLEMENTED)""")
 
 
 def echo(bot, update):
@@ -98,10 +100,7 @@ def storedroll(bot, update, args):
 	if len(args) == 1: #single argument
 		#Then we're looking for a previously stored roll
 		sroll_name = args[0]
-		c = db.conn.cursor()
-		t = (sroll_name, userid, )
-		c.execute('SELECT roll FROM rolls WHERE name=? AND users_id=?', t)
-		retrieved_roll = c.fetchone()
+		retrieved_roll = db.fetch_roll(userid, sroll_name)
 		if not (retrieved_roll == None):
 			rolldie(bot, update, retrieved_roll)
 		else:
@@ -111,16 +110,12 @@ def storedroll(bot, update, args):
 		#then we're storing a new roll
 		sroll_name = args[0]
 		sroll_value = args[1]
-		c = db.conn.cursor()
-		t = (sroll_name, userid, )
-		c.execute('SELECT roll FROM rolls WHERE name=? AND users_id=?', t)
-		retrieved_roll = c.fetchone()
-		if retrieved_roll == None:
+		if not db.is_roll_registered(userid, sroll_name):
 			if Roll.is_valid_roll(sroll_value):
-				t = (sroll_name, sroll_value, userid, )
-				c.execute('INSERT INTO rolls (name, roll, users_id) VALUES (?, ?, ?)', t)
-				db.conn.commit()
-				bot.sendMessage(update.message.chat_id, text="New roll stored.")
+				if db.register_roll(userid, sroll_name, sroll_value):
+					bot.sendMessage(update.message.chat_id, text="New roll stored.")
+				else:
+					bot.sendMessage(update.message.chat_id, text="Error trying to register roll. Are you registered yet?")
 			else:
 				bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.")
 		else:
@@ -130,6 +125,34 @@ def storedroll(bot, update, args):
 
 	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	db.conn.close()
+
+def listroll(bot, update):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	roll_list = db.fetch_all_rolls(userid).keys()
+	bot.sendMessage(update.message.chat_id, text="Your stored rolls: " + ' '.join(map(str, roll_list)))
+	db.conn.close()
+
+def delroll(bot, update, args):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	if len(args) == 1: #command takes a single argument
+		sroll_name = args[0]
+		if db.delete_roll(userid, sroll_name):
+			bot.sendMessage(update.message.chat_id, text="Roll deleted.")
+		else:
+			bot.sendMessage(update.message.chat_id, text="Error: Roll not found.")
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+
+def char(bot, update, args):
+	pass
+
+def newchar(bot, update, args):
+	pass
+
+def listchar(bot, update):
+	pass
 
 
 def main():
@@ -148,6 +171,8 @@ def main():
 		dp.add_handler(CommandHandler("help", help))
 		dp.add_handler(CommandHandler("roll", rolldie, pass_args=True))
 		dp.add_handler(CommandHandler("sroll", storedroll, pass_args=True))
+		dp.add_handler(CommandHandler("listroll", listroll))
+		dp.add_handler(CommandHandler("delroll", delroll, pass_args=True))
 
 		# on noncommand i.e message - echo the message on Telegram
 		dp.add_handler(MessageHandler([Filters.text], echo))
