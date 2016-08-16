@@ -4,12 +4,11 @@ A Telegram bot for tabletop games.
 
 ### Dependencies
 
-Python 2.7
-[python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) v5.0.0
+Python 2.7 and [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) v5.0.0
 
 ### Instructions
 
-Something to write up at some point, ey? For now, make sure to set the TOKEN variable to your own token (As obtained from [BotFather](https://core.telegram.org/bots))
+Something to write up at some point, ey? For now, make sure to set the TOKEN variable in the lamia.cfg file to your own token (As obtained from [BotFather](https://core.telegram.org/bots)). Setting a password allows you to restrict bot registration to those who know the secret value only.
 
 ### License
 

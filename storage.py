@@ -231,9 +231,9 @@ class LamiaDB():
 		try:
 			cur = self.conn.cursor()
 			current_character = self.character_id_from_name(userid, charactername)
-			t = (attributename, attributevalue, current_character, )
+			t = (attributevalue, current_character, attributename, )
 			cur.execute('begin')
-			cur.execute('UPDATE attributes SET ?=? WHERE characters_id=?', t)
+			cur.execute('UPDATE attributes SET attributevalue=? WHERE characters_id=? AND attributename=?', t)
 			self.conn.commit()
 			return True
 		except Exception as e:

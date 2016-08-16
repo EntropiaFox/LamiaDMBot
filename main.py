@@ -15,6 +15,7 @@ import logging, sqlite3, ConfigParser, os
 from roll import *
 from storage import *
 from char import *
+from collections import OrderedDict
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,7 +30,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.3.1"
+VERSION = "v0.4.0"
 
 # Define a few helper functions
 
@@ -54,15 +55,14 @@ def readconfig(config_filename='lamia.cfg'):
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update, args):
-    bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.')
-    # If secret is not set, register unconditionally. If secret is set, register when user knows said secret
-    if (SECRET == "") or (args[0] == SECRET):
-    	db = LamiaDB()
+	global TOKEN, SECRET
+	bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.')
+	# If secret is not set, register unconditionally. If secret is set, register when user knows said secret
+	if (SECRET == "") or (args[0] == SECRET):
+		db = LamiaDB()
     	if db.register_user(update.message.from_user.id):
     		bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
     	db.conn.close()
-
-
 
 def help(bot, update):
     bot.sendMessage(update.message.chat_id, text="""/roll xdy(D/K)a(+/-)z - Rolls X Y-sided dice with Z modifier.
@@ -74,8 +74,13 @@ Other optional arguments:
 /sroll RollName - Lets you recall a stored roll.
 /listroll - Provides a list of all the stored rolls you have.
 /delroll Roll - Lets you delete a stored roll.
-/newchar CharacterName - Lets you register a new character. Requires user registration. (TO BE IMPLEMENTED)
-/char CharacterName - Displays the name and attributes of a given character. (TO BE IMPLEMENTED)""")
+/newchar CharacterName Attributename Attributevalue - Lets you register a new character. Requires user registration.
+/char CharacterName - Displays the name and attributes of a given character.
+/listchar - Provides a list of all the characters you have.
+/delchar CharacterName - Lets you delete a stored character.
+/attr CharacterName Attributename Attributevalue - Adds or changes the given character's attribute.
+/delattr CharacterName Attributename - Deletes the given character's attribute.
+/about - Shows the bot's current running version and copyright info.""")
 
 
 def echo(bot, update):
@@ -144,16 +149,98 @@ def delroll(bot, update, args):
 			bot.sendMessage(update.message.chat_id, text="Error: Roll not found.")
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+	db.conn.close()
 
 def char(bot, update, args):
-	pass
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	if len(args) == 1: #command takes a single argument
+		charname = args[0]
+		chardict = db.fetch_character(userid, charname)
+		chardict = OrderedDict(sorted(chardict.items(), key=lambda t: t[0])) #Order dictionary by key
+		if (chardict == {}):
+			bot.sendMessage(update.message.chat_id, text="Error: Character not found.")
+		else:
+			output = ""
+			for key, value in chardict.iteritems():
+				output += (key + ": " + value + "\n")
+			bot.sendMessage(update.message.chat_id, text=output)
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+	db.conn.close()
+
 
 def newchar(bot, update, args):
-	pass
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	if len(args) >= 1: #command takes at least one argument
+		charname = args[0]
+		attriter = iter(args[1:])
+		attrdict = dict(zip(attriter, attriter))
+		reg = db.register_character(userid, charname)
+		if reg and attrdict != {}: #Character registation was a success and there's at least one attribute value
+			for key, value in attrdict.iteritems():
+				db.add_attribute(userid, charname, key, value)
+			bot.sendMessage(update.message.chat_id, text="Character registered successfully.")
+		elif reg:
+			bot.sendMessage(update.message.chat_id, text="Character registered successfully.")
+		else:
+			bot.sendMessage(update.message.chat_id, text="Error while attempting to register a new character.")
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+	db.conn.close()
+
 
 def listchar(bot, update):
-	pass
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	character_list = db.fetch_all_characters(userid)
+	bot.sendMessage(update.message.chat_id, text="Your characters: " + ' '.join(map(str, character_list)))
 
+def charattr(bot, update, args):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	if len(args) >= 3: #command takes at least three arguments
+		charname = args[0]
+		attriter = iter(args[1:])
+		attrdict = dict(zip(attriter, attriter))
+		for key, value in attrdict.iteritems():
+			if not db.add_attribute(userid, charname, key, value):
+				if not db.change_attribute(userid, charname, key, value):
+					bot.sendMessage(update.message.chat_id, text="Error while attempting to record or change an attribute.")
+		bot.sendMessage(update.message.chat_id, text="Attributes changed.")
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+	db.conn.close()
+
+def delchar(bot, update, args):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	if len(args) == 1: #command takes a single argument
+		if not db.delete_character(userid, args[0]):
+			bot.sendMessage(update.message.chat_id, text="Error while attempting to delete a character.")
+		else:
+			bot.sendMessage(update.message.chat_id, text="Character deleted.")
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+	db.conn.close()
+
+
+def delcharattr(bot, update, args):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	if len(args) == 2: #command takes three arguments
+		if db.remove_attribute(userid, args[0], args[1]):
+			bot.sendMessage(update.message.chat_id, text="Attribute removed.")
+		else:
+			bot.sendMessage(update.message.chat_id, text="Error removing a character attribute.")
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+	db.conn.close()
+
+def aboutbot(bot, update):
+	global VERSION
+	bot.sendMessage(update.message.chat_id, text="LamiaDMBot " + VERSION + "\nBy EntropiaFox\nReleased under the terms of the GPL v3 License")
 
 def main():
 	try:
@@ -173,6 +260,13 @@ def main():
 		dp.add_handler(CommandHandler("sroll", storedroll, pass_args=True))
 		dp.add_handler(CommandHandler("listroll", listroll))
 		dp.add_handler(CommandHandler("delroll", delroll, pass_args=True))
+		dp.add_handler(CommandHandler("char", char, pass_args=True))
+		dp.add_handler(CommandHandler("newchar", newchar, pass_args=True))
+		dp.add_handler(CommandHandler("listchar", listchar))
+		dp.add_handler(CommandHandler("delchar", delchar, pass_args=True))
+		dp.add_handler(CommandHandler("attr", charattr, pass_args=True))
+		dp.add_handler(CommandHandler("delattr", delcharattr, pass_args=True))
+		dp.add_handler(CommandHandler("about", aboutbot))
 
 		# on noncommand i.e message - echo the message on Telegram
 		dp.add_handler(MessageHandler([Filters.text], echo))

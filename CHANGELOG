@@ -1,3 +1,7 @@
+v0.4.0
+- Added character storage capabilities. Please check the /help command for more details. As such, any previous databases are incompatible with this new version's and any existing data should be recreated.
+- Added "about" command displaying the running bot's version and license info.
+
 v0.3.0
 - Added Drop and Keep capability to roll parser
 
