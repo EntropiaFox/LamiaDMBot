@@ -30,7 +30,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.5.0"
+VERSION = "v0.5.1unstable"
 
 # Define a few helper functions
 
@@ -65,11 +65,12 @@ def start(bot, update, args):
     	db.conn.close()
 
 def help(bot, update):
-    bot.sendMessage(update.message.chat_id, text="""/roll xdy(D/K)a(+/-)z - Rolls X Y-sided dice with Z modifier.
-Other optional arguments:
+    bot.sendMessage(update.message.chat_id, text="""/roll xdy - Rolls X Y-sided dice.
+Other optional arguments, in order of precedence:
 - Add "!" at the end to use exploding dice.
-- Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
+- Use ">" or "<" to count successes when rolling over or rolling under the specified amount. In this mode, the modifier adds or substracts successes.
+- Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
 /aroll Roll/RollName - Roll with advantage (The higher of two rolls is selected).
 /droll Roll/RollName - Roll with disadvantage (The lower of two rolls is selected).
 /sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name. Requires user registration.
@@ -86,22 +87,28 @@ Other optional arguments:
 
 
 def echo(bot, update):
-    bot.sendMessage(update.message.chat_id, text=update.message.text)
+	bot.sendMessage(update.message.chat_id, text=update.message.text)
 
 
 def error(bot, update, error):
-    logger.warn('Update "%s" caused error "%s"' % (update, error))
+	logger.warn('Update "%s" caused error "%s"' % (update, error))
 
 def rolldie(bot, update, args):
-    roll = Roll(args[0])
-    #bot.sendMessage(update.message.chat_id, text=' '.join(args))
-    if len(roll.result) > 0:
-    	bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
-    		" (" + ("+" if (roll.modifier > 0) else "") + \
-    		str(roll.modifier) + ") = " + str(roll.sum), \
-    		reply_to_message_id=update.message.message_id)
-    else:
-	bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
+	roll = Roll(args[0])
+	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
+	if len(roll.result) > 0:
+		if(roll.rollunder == 0 and roll.rollover == 0):
+			bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
+			" (" + ("+" if (roll.modifier > 0) else "") + \
+			str(roll.modifier) + ") = " + str(roll.sum), \
+			reply_to_message_id=update.message.message_id)
+		else:
+			bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
+			" (" + ("+" if (roll.modifier > 0) else "") + \
+			str(roll.modifier) + ") \n" + str(roll.sum) + " successes, " + str(roll.fail) + " failures.", \
+			reply_to_message_id=update.message.message_id)
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 
 def aroll(bot, update, args):
 	db = LamiaDB()
@@ -123,7 +130,7 @@ def aroll(bot, update, args):
 		roll1_sum = str(roll1.sum)
 	if len(roll1.result) > 0:
 		bot.sendMessage(update.message.chat_id, text="Rolling with advantage: " + roll1.rollparams + "\n" +
-			roll1_sum + " | " + roll2_sum)
+			roll1_sum + " | " + roll2_sum, reply_to_message_id=update.message.message_id)
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
@@ -148,7 +155,7 @@ def droll(bot, update, args):
 		roll1_sum = str(roll1.sum)
 	if len(roll1.result) > 0:
 		bot.sendMessage(update.message.chat_id, text="Rolling with disadvantage: " + roll1.rollparams + "\n" +
-			roll1_sum + " | " + roll2_sum)
+			roll1_sum + " | " + roll2_sum, reply_to_message_id=update.message.message_id)
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
