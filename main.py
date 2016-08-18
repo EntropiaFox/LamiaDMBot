@@ -30,7 +30,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.5.1unstable"
+VERSION = "v0.5.2unstable"
 
 # Define a few helper functions
 
@@ -41,6 +41,7 @@ def readconfig(config_filename='lamia.cfg'):
 		config.add_section('main')
 		config.set('main', 'TOKEN', 'TOKEN')
 		config.set('main', 'SECRET', '')
+		config.set('main', 'ratelimit', '1000')
 		config.write(config_file)
 		config_file.close()
 	else:
@@ -71,6 +72,7 @@ Other optional arguments, in order of precedence:
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
 - Use ">" or "<" to count successes when rolling over or rolling under the specified amount. In this mode, the modifier adds or substracts successes.
 - Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
+The bot supports FATE-style dice. In order to use them, use the xdF notation. For example, /roll 4dF tells the bot to roll four FATE dice.
 /aroll Roll/RollName - Roll with advantage (The higher of two rolls is selected).
 /droll Roll/RollName - Roll with disadvantage (The lower of two rolls is selected).
 /sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name. Requires user registration.
@@ -336,7 +338,7 @@ def main():
 		dp.add_handler(CommandHandler("about", aboutbot))
 
 		# on noncommand i.e message - echo the message on Telegram
-		dp.add_handler(MessageHandler([Filters.text], echo))
+		#dp.add_handler(MessageHandler([Filters.text], echo))
 
 		# log all errors
 		dp.add_error_handler(error)

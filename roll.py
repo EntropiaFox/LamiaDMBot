@@ -5,15 +5,22 @@
 
 import random
 
+class ValueOverRatelimit(Exception):
+	def __init__(self):
+		Exception.__init__(self, "A parameter was used with a value over the rate limit.")
+
 class Roll:
 	"""Roll handler for LamiaDMBot"""
-		
+	
+	RATELIMIT = 1000 #Any of a roll's parameters cannot be larger than this
+
 	def __init__(self, rollparams):
 		self.rollparams = rollparams
 		self.result = []
 		self.sum = 0 #counts successes in dicepool mode
 		self.fail = 0 #counts failures in dicepool mode, otherwise set to 0
 		self.modifier = 0
+		self.fate = False
 		self.exploding = False
 		self.highest = False #TODO: Drop Highest and Drop Lowest modes
 		self.lowest = False
@@ -55,14 +62,26 @@ class Roll:
 				self.drop = int(roll_basedie.split("D")[1])
 				roll_basedie = roll_basedie.split("D")[0]
 
+			#Before attempting to cast as integers, are we using FATE-style dice?
+			if("F" in roll_basedie):
+				roll_multiplier = int(roll_multiplier)
+				roll_basedie = 6
+				self.fate = True
+			else:
 			#Let's now cast as integers
-			roll_multiplier = int(roll_multiplier)
-			roll_basedie = int(roll_basedie)
+				roll_multiplier = int(roll_multiplier)
+				roll_basedie = int(roll_basedie)
+			if (roll_multiplier > self.RATELIMIT) or (roll_basedie > self.RATELIMIT):
+			#Values over the rate limit shall raise an exception
+				raise ValueOverRatelimit()
 
 			x = 0
 
 			while x < roll_multiplier:
-				self.result.append(random.randint(1, roll_basedie))
+				if self.fate:
+					self.result.append((random.randint(1,6) % 3) - 1)
+				else:
+					self.result.append(random.randint(1, roll_basedie))
 				if (self.result[-1] == roll_basedie) and (self.exploding == True):
 					roll_multiplier+=1
 				x+=1
@@ -87,11 +106,11 @@ class Roll:
 					for i in self.result:
 						if i <= self.rollover:
 							self.sum+=1 
-						else: 
+						else:
 							self.fail+=1
 				self.sum+=self.modifier
 
-		except:
+		except Exception as e:
 			pass
 
 	@staticmethod
