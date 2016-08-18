@@ -13,6 +13,9 @@ class Roll:
 		self.sum = 0
 		self.modifier = 0
 		self.exploding = False
+		self.highest = False #TODO: Drop Highest and Drop Lowest modes
+		self.lowest = False
+		self.coin = False #TODO: Coinflip mode and until heads/tails mode ("xd2c", "1d2ch", "1d2ct")
 		self.drop = 0
 		self.keep = 0
 		try:

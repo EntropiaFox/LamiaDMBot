@@ -94,9 +94,10 @@ def rolldie(bot, update, args):
     roll = Roll(args[0])
     #bot.sendMessage(update.message.chat_id, text=' '.join(args))
     if len(roll.result) > 0:
-    	bot.sendMessage(update.message.chat_id, text="Your rolls: " + ' '.join(map(str, roll.result)) + " | (" + ("+" if (roll.modifier > 0) else "") + str(roll.modifier) + ") | =" + str(roll.sum))
+    	bot.sendMessage(update.message.chat_id, text="Your rolls: " + ' '.join(map(str, roll.result)) + " | (" + ("+" if (roll.modifier > 0) else "") + str(roll.modifier) + ") | =" + str(roll.sum), \
+    		reply_to_message_id=update.message.message_id)
     else:
-	bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.")
+	bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 
 def storedroll(bot, update, args):
 	db = LamiaDB()
@@ -109,7 +110,7 @@ def storedroll(bot, update, args):
 		if not (retrieved_roll == None):
 			rolldie(bot, update, retrieved_roll)
 		else:
-			bot.sendMessage(update.message.chat_id, text="Error: Stored roll not found.")
+			bot.sendMessage(update.message.chat_id, text="Error: Stored roll not found.", reply_to_message_id=update.message.message_id)
 
 	elif len(args) == 2: #two arguments
 		#then we're storing a new roll
@@ -118,15 +119,16 @@ def storedroll(bot, update, args):
 		if not db.is_roll_registered(userid, sroll_name):
 			if Roll.is_valid_roll(sroll_value):
 				if db.register_roll(userid, sroll_name, sroll_value):
-					bot.sendMessage(update.message.chat_id, text="New roll stored.")
+					bot.sendMessage(update.message.chat_id, text="New roll stored.", reply_to_message_id=update.message.message_id)
 				else:
-					bot.sendMessage(update.message.chat_id, text="Error trying to register roll. Are you registered yet?")
+					bot.sendMessage(update.message.chat_id, text="Error trying to register roll. Are you registered yet?", \
+						reply_to_message_id=update.message.message_id)
 			else:
-				bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.")
+				bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 		else:
-			bot.sendMessage(update.message.chat_id, text="Error: There is a stored roll with the same name.")
+			bot.sendMessage(update.message.chat_id, text="Error: There is a stored roll with the same name.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.",reply_to_message_id=update.message.message_id)
 
 	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	db.conn.close()
@@ -135,7 +137,7 @@ def listroll(bot, update):
 	db = LamiaDB()
 	userid = update.message.from_user.id
 	roll_list = db.fetch_all_rolls(userid).keys()
-	bot.sendMessage(update.message.chat_id, text="Your stored rolls: " + ' '.join(map(str, roll_list)))
+	bot.sendMessage(update.message.chat_id, text="Your stored rolls: " + ' '.join(map(str, roll_list)), reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 def delroll(bot, update, args):
@@ -144,11 +146,11 @@ def delroll(bot, update, args):
 	if len(args) == 1: #command takes a single argument
 		sroll_name = args[0]
 		if db.delete_roll(userid, sroll_name):
-			bot.sendMessage(update.message.chat_id, text="Roll deleted.")
+			bot.sendMessage(update.message.chat_id, text="Roll deleted.", reply_to_message_id=update.message.message_id)
 		else:
-			bot.sendMessage(update.message.chat_id, text="Error: Roll not found.")
+			bot.sendMessage(update.message.chat_id, text="Error: Roll not found.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 def char(bot, update, args):
@@ -159,14 +161,14 @@ def char(bot, update, args):
 		chardict = db.fetch_character(userid, charname)
 		chardict = OrderedDict(sorted(chardict.items(), key=lambda t: t[0])) #Order dictionary by key
 		if (chardict == {}):
-			bot.sendMessage(update.message.chat_id, text="Error: Character not found.")
+			bot.sendMessage(update.message.chat_id, text="Error: Character not found.", reply_to_message_id=update.message.message_id)
 		else:
 			output = ""
 			for key, value in chardict.iteritems():
 				output += (key + ": " + value + "\n")
-			bot.sendMessage(update.message.chat_id, text=output)
+			bot.sendMessage(update.message.chat_id, text=output, reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 
@@ -181,13 +183,13 @@ def newchar(bot, update, args):
 		if reg and attrdict != {}: #Character registation was a success and there's at least one attribute value
 			for key, value in attrdict.iteritems():
 				db.add_attribute(userid, charname, key, value)
-			bot.sendMessage(update.message.chat_id, text="Character registered successfully.")
+			bot.sendMessage(update.message.chat_id, text="Character registered successfully.", reply_to_message_id=update.message.message_id)
 		elif reg:
-			bot.sendMessage(update.message.chat_id, text="Character registered successfully.")
+			bot.sendMessage(update.message.chat_id, text="Character registered successfully.", reply_to_message_id=update.message.message_id)
 		else:
-			bot.sendMessage(update.message.chat_id, text="Error while attempting to register a new character.")
+			bot.sendMessage(update.message.chat_id, text="Error while attempting to register a new character.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 
@@ -195,7 +197,7 @@ def listchar(bot, update):
 	db = LamiaDB()
 	userid = update.message.from_user.id
 	character_list = db.fetch_all_characters(userid)
-	bot.sendMessage(update.message.chat_id, text="Your characters: " + ' '.join(map(str, character_list)))
+	bot.sendMessage(update.message.chat_id, text="Your characters: " + ' '.join(map(str, character_list)), reply_to_message_id=update.message.message_id)
 
 def charattr(bot, update, args):
 	db = LamiaDB()
@@ -207,10 +209,11 @@ def charattr(bot, update, args):
 		for key, value in attrdict.iteritems():
 			if not db.add_attribute(userid, charname, key, value):
 				if not db.change_attribute(userid, charname, key, value):
-					bot.sendMessage(update.message.chat_id, text="Error while attempting to record or change an attribute.")
-		bot.sendMessage(update.message.chat_id, text="Attributes changed.")
+					bot.sendMessage(update.message.chat_id, text="Error while attempting to record or change an attribute.", \
+						reply_to_message_id=update.message.message_id)
+		bot.sendMessage(update.message.chat_id, text="Attributes changed.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.",reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 def delchar(bot, update, args):
@@ -218,11 +221,11 @@ def delchar(bot, update, args):
 	userid = update.message.from_user.id
 	if len(args) == 1: #command takes a single argument
 		if not db.delete_character(userid, args[0]):
-			bot.sendMessage(update.message.chat_id, text="Error while attempting to delete a character.")
+			bot.sendMessage(update.message.chat_id, text="Error while attempting to delete a character.", reply_to_message_id=update.message.message_id)
 		else:
-			bot.sendMessage(update.message.chat_id, text="Character deleted.")
+			bot.sendMessage(update.message.chat_id, text="Character deleted.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.",reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 
@@ -231,16 +234,17 @@ def delcharattr(bot, update, args):
 	userid = update.message.from_user.id
 	if len(args) == 2: #command takes three arguments
 		if db.remove_attribute(userid, args[0], args[1]):
-			bot.sendMessage(update.message.chat_id, text="Attribute removed.")
+			bot.sendMessage(update.message.chat_id, text="Attribute removed.", reply_to_message_id=update.message.message_id)
 		else:
-			bot.sendMessage(update.message.chat_id, text="Error removing a character attribute.")
+			bot.sendMessage(update.message.chat_id, text="Error removing a character attribute.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.")
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 def aboutbot(bot, update):
 	global VERSION
-	bot.sendMessage(update.message.chat_id, text="LamiaDMBot " + VERSION + "\nBy EntropiaFox\nReleased under the terms of the GPL v3 License")
+	bot.sendMessage(update.message.chat_id, text="LamiaDMBot " + VERSION + "\nBy EntropiaFox\nReleased under the terms of the GPL v3 License", \
+		reply_to_message_id=update.message.message_id)
 
 def main():
 	try:
