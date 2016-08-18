@@ -1,3 +1,7 @@
+v0.5.0
+- Added two new commands: /aroll (Roll with advantage) or /droll (Roll with disadvantage). You may use stored rolls with these commands as well.
+- Slight display changes: The bot will now quote any message with a valid command, and it'll display the roll's notation alongside its result.
+
 v0.4.0
 - Added character storage capabilities. Please check the /help command for more details. As such, any previous databases are incompatible with this new version's and any existing data should be recreated.
 - Added "about" command displaying the running bot's version and license info.

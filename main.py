@@ -30,7 +30,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.4.0"
+VERSION = "v0.5.0"
 
 # Define a few helper functions
 
@@ -70,6 +70,8 @@ Other optional arguments:
 - Add "!" at the end to use exploding dice.
 - Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
+/aroll Roll/RollName - Roll with advantage (The higher of two rolls is selected).
+/droll Roll/RollName - Roll with disadvantage (The lower of two rolls is selected).
 /sroll RollName Roll - Lets you store rolls for future use. Give the roll an identifier and then call it by name. Requires user registration.
 /sroll RollName - Lets you recall a stored roll.
 /listroll - Provides a list of all the stored rolls you have.
@@ -94,10 +96,62 @@ def rolldie(bot, update, args):
     roll = Roll(args[0])
     #bot.sendMessage(update.message.chat_id, text=' '.join(args))
     if len(roll.result) > 0:
-    	bot.sendMessage(update.message.chat_id, text="Your rolls: " + ' '.join(map(str, roll.result)) + " | (" + ("+" if (roll.modifier > 0) else "") + str(roll.modifier) + ") | =" + str(roll.sum), \
+    	bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
+    		" (" + ("+" if (roll.modifier > 0) else "") + \
+    		str(roll.modifier) + ") = " + str(roll.sum), \
     		reply_to_message_id=update.message.message_id)
     else:
 	bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
+
+def aroll(bot, update, args):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	#First, we'll test if it's a valid roll outright
+	if Roll.is_valid_roll(args[0]):
+		roll1 = Roll(args[0])
+		roll2 = Roll(args[0])
+	else: #We'll now test if it could be a recalled roll. TODO: Fix edge case in which a valid stored roll's name can be in itself a valid roll, don't wanna do this shit right now
+		sroll = db.fetch_roll(userid, args[0])[0]
+		roll1 = Roll(sroll)
+		roll2 = Roll(sroll)
+	#Now, which one is the highest?
+	if roll1.sum >= roll2.sum:
+		roll1_sum = "[" + str(roll1.sum) + "]"
+		roll2_sum = str(roll2.sum)
+	else:
+		roll2_sum = "[" + str(roll2.sum)+ "]"
+		roll1_sum = str(roll1.sum)
+	if len(roll1.result) > 0:
+		bot.sendMessage(update.message.chat_id, text="Rolling with advantage: " + roll1.rollparams + "\n" +
+			roll1_sum + " | " + roll2_sum)
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
+	db.conn.close()
+
+def droll(bot, update, args):
+	db = LamiaDB()
+	userid = update.message.from_user.id
+	#First, we'll test if it's a valid roll outright
+	if Roll.is_valid_roll(args[0]):
+		roll1 = Roll(args[0])
+		roll2 = Roll(args[0])
+	else: #We'll now test if it could be a recalled roll. TODO: Fix edge case in which a valid stored roll's name can be in itself a valid roll, don't wanna do this shit right now
+		sroll = db.fetch_roll(userid, args[0])[0]
+		roll1 = Roll(sroll)
+		roll2 = Roll(sroll)
+	#Now, which one is the lowest?
+	if roll1.sum < roll2.sum:
+		roll1_sum = "[" + str(roll1.sum) + "]"
+		roll2_sum = str(roll2.sum)
+	else:
+		roll2_sum = "[" + str(roll2.sum)+ "]"
+		roll1_sum = str(roll1.sum)
+	if len(roll1.result) > 0:
+		bot.sendMessage(update.message.chat_id, text="Rolling with disadvantage: " + roll1.rollparams + "\n" +
+			roll1_sum + " | " + roll2_sum)
+	else:
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
+	db.conn.close()
 
 def storedroll(bot, update, args):
 	db = LamiaDB()
@@ -261,6 +315,8 @@ def main():
 		dp.add_handler(CommandHandler("start", start, pass_args=True))
 		dp.add_handler(CommandHandler("help", help))
 		dp.add_handler(CommandHandler("roll", rolldie, pass_args=True))
+		dp.add_handler(CommandHandler("aroll", aroll, pass_args=True))
+		dp.add_handler(CommandHandler("droll", droll, pass_args=True))
 		dp.add_handler(CommandHandler("sroll", storedroll, pass_args=True))
 		dp.add_handler(CommandHandler("listroll", listroll))
 		dp.add_handler(CommandHandler("delroll", delroll, pass_args=True))

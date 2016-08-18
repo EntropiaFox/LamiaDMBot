@@ -9,6 +9,7 @@ class Roll:
 	"""Roll handler for LamiaDMBot"""
 		
 	def __init__(self, rollparams):
+		self.rollparams = rollparams
 		self.result = []
 		self.sum = 0
 		self.modifier = 0
