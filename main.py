@@ -57,16 +57,24 @@ def readconfig(config_filename='lamia.cfg'):
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update, args):
 	global TOKEN, SECRET
-	bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.')
+	bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.' \
+	+ (" A password has been set in order to register with this bot, please ask the maintainer about it." if SECRET else ""))
 	# If secret is not set, register unconditionally. If secret is set, register when user knows said secret
-	if (SECRET == "") or (args[0] == SECRET):
+	if (SECRET == ""):
 		db = LamiaDB()
-    	if db.register_user(update.message.from_user.id):
-    		bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
-    	db.conn.close()
+		if db.register_user(update.message.from_user.id):
+			bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
+		db.conn.close()
+	elif (len(args) > 0):
+		if args[0] == SECRET:
+			db = LamiaDB()
+			if db.register_user(update.message.from_user.id):
+				bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
+			db.conn.close()
 
 def help(bot, update):
-    bot.sendMessage(update.message.chat_id, text="""/roll xdy - Rolls X Y-sided dice.
+	bot.sendMessage(update.message.chat_id, text="""/start Secret - Allows you to register with the bot. A password may have been specified by the bot's maintainer.
+/roll xdy - Rolls X Y-sided dice.
 Other optional arguments, in order of precedence:
 - Add "!" at the end to use exploding dice.
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
