@@ -9,7 +9,7 @@ class LamiaDB():
 	"""Database handler for LamiaDMBot"""
 
 	def __init__(self, dbname='lamia.db'):
-
+		"""Constructor for the LamiaDB database handler"""
 		# Enable logging
 		logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 

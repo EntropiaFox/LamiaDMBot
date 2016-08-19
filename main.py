@@ -56,16 +56,15 @@ def readconfig(config_filename='lamia.cfg'):
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update, args):
-	global TOKEN, SECRET
 	bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.' \
 	+ (" A password has been set in order to register with this bot, please ask the maintainer about it." if SECRET else ""))
 	# If secret is not set, register unconditionally. If secret is set, register when user knows said secret
-	if (SECRET == ""):
+	if SECRET == "":
 		db = LamiaDB()
 		if db.register_user(update.message.from_user.id):
 			bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
 		db.conn.close()
-	elif (len(args) > 0):
+	elif len(args) > 0:
 		if args[0] == SECRET:
 			db = LamiaDB()
 			if db.register_user(update.message.from_user.id):
@@ -107,7 +106,7 @@ def rolldie(bot, update, args):
 	roll = Roll(args[0])
 	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	if len(roll.result) > 0:
-		if(roll.rollunder == 0 and roll.rollover == 0):
+		if roll.rollunder == 0 and roll.rollover == 0:
 			bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
 			" (" + ("+" if (roll.modifier > 0) else "") + \
 			str(roll.modifier) + ") = " + str(roll.sum), \
@@ -139,8 +138,8 @@ def aroll(bot, update, args):
 		roll2_sum = "[" + str(roll2.sum)+ "]"
 		roll1_sum = str(roll1.sum)
 	if len(roll1.result) > 0:
-		bot.sendMessage(update.message.chat_id, text="Rolling with advantage: " + roll1.rollparams + "\n" +
-			roll1_sum + " | " + roll2_sum, reply_to_message_id=update.message.message_id)
+		bot.sendMessage(update.message.chat_id, text="Rolling with advantage: " + roll1.rollparams + "\n" + \
+		roll1_sum + " | " + roll2_sum, reply_to_message_id=update.message.message_id)
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
@@ -164,8 +163,8 @@ def droll(bot, update, args):
 		roll2_sum = "[" + str(roll2.sum)+ "]"
 		roll1_sum = str(roll1.sum)
 	if len(roll1.result) > 0:
-		bot.sendMessage(update.message.chat_id, text="Rolling with disadvantage: " + roll1.rollparams + "\n" +
-			roll1_sum + " | " + roll2_sum, reply_to_message_id=update.message.message_id)
+		bot.sendMessage(update.message.chat_id, text="Rolling with disadvantage: " + roll1.rollparams + "\n" + \
+		roll1_sum + " | " + roll2_sum, reply_to_message_id=update.message.message_id)
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
@@ -199,7 +198,7 @@ def storedroll(bot, update, args):
 		else:
 			bot.sendMessage(update.message.chat_id, text="Error: There is a stored roll with the same name.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.",reply_to_message_id=update.message.message_id)
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 
 	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	db.conn.close()
@@ -231,7 +230,7 @@ def char(bot, update, args):
 		charname = args[0]
 		chardict = db.fetch_character(userid, charname)
 		chardict = OrderedDict(sorted(chardict.items(), key=lambda t: t[0])) #Order dictionary by key
-		if (chardict == {}):
+		if chardict == {}:
 			bot.sendMessage(update.message.chat_id, text="Error: Character not found.", reply_to_message_id=update.message.message_id)
 		else:
 			output = ""
@@ -284,7 +283,7 @@ def charattr(bot, update, args):
 						reply_to_message_id=update.message.message_id)
 		bot.sendMessage(update.message.chat_id, text="Attributes changed.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.",reply_to_message_id=update.message.message_id)
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 def delchar(bot, update, args):
@@ -296,7 +295,7 @@ def delchar(bot, update, args):
 		else:
 			bot.sendMessage(update.message.chat_id, text="Character deleted.", reply_to_message_id=update.message.message_id)
 	else:
-		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.",reply_to_message_id=update.message.message_id)
+		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 
@@ -313,7 +312,6 @@ def delcharattr(bot, update, args):
 	db.conn.close()
 
 def aboutbot(bot, update):
-	global VERSION
 	bot.sendMessage(update.message.chat_id, text="LamiaDMBot " + VERSION + "\nBy EntropiaFox\nReleased under the terms of the GPL v3 License", \
 		reply_to_message_id=update.message.message_id)
 
@@ -361,7 +359,7 @@ def main():
 
 	except:
 		#Exception handling
-		logger.exception("Exception raised.") 
+		logger.exception("Exception raised.")
 
 if __name__ == '__main__':
 	main()
