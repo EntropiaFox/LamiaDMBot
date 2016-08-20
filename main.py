@@ -30,7 +30,7 @@ TOKEN = "TOKEN"
 SECRET = ""
 
 #Version information
-VERSION = "v0.5.2unstable"
+VERSION = "v0.5.3unstable"
 
 # Define a few helper functions
 
@@ -75,7 +75,8 @@ def help(bot, update):
 	bot.sendMessage(update.message.chat_id, text="""/start Secret - Allows you to register with the bot. A password may have been specified by the bot's maintainer.
 /roll xdy - Rolls X Y-sided dice.
 Other optional arguments, in order of precedence:
-- Add "!" at the end to use exploding dice.
+- Add "&" followed by a number to repeat the roll that many times.
+- Add "!" to use exploding dice.
 - Use "+" or "-" to add a modifier that adds or substracts that amount to the sum.
 - Use ">" or "<" to count successes when rolling over or rolling under the specified amount. In this mode, the modifier adds or substracts successes.
 - Use "D" or "K" to Drop a certain amount of lowest dice or Keep a certain amount of highest dice.
@@ -106,16 +107,23 @@ def rolldie(bot, update, args):
 	roll = Roll(args[0])
 	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	if len(roll.result) > 0:
-		if roll.rollunder == 0 and roll.rollover == 0:
-			bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
-			" (" + ("+" if (roll.modifier > 0) else "") + \
-			str(roll.modifier) + ") = " + str(roll.sum), \
-			reply_to_message_id=update.message.message_id)
+		msg = u""
+		for x in range(0, roll.repeat):
+			msg += ("# " + str(x+1) + "\n") if roll.repeat > 1 else ""
+			if roll.rollunder == 0 and roll.rollover == 0:
+				msg += roll.rollparams + " | " + ' '.join(map(str, roll.result)) + \
+				" (" + ("+" if (roll.modifier > 0) else "") + \
+				str(roll.modifier) + ") = " + str(roll.sum)
+			else:
+				msg += roll.rollparams + " | " + ' '.join(map(str, roll.result)) + \
+				" (" + ("+" if (roll.modifier > 0) else "") + \
+				str(roll.modifier) + ") \n" + str(roll.sum) + " successes, " + str(roll.fail) + " failures."
+			roll = Roll(args[0])
+			msg += "\n"
+		if len(msg) < 4096: #The maximum message size in Telegram
+			bot.sendMessage(update.message.chat_id, text=msg, reply_to_message_id=update.message.message_id)
 		else:
-			bot.sendMessage(update.message.chat_id, text=roll.rollparams + " | Your rolls: " + ' '.join(map(str, roll.result)) + \
-			" (" + ("+" if (roll.modifier > 0) else "") + \
-			str(roll.modifier) + ") \n" + str(roll.sum) + " successes, " + str(roll.fail) + " failures.", \
-			reply_to_message_id=update.message.message_id)
+			bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 

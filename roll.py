@@ -6,6 +6,8 @@
 import random
 
 class ValueOverRatelimit(Exception):
+	"""Exception returned whenever a parameter (Number of dice, dice sides, etc.) goes over the rate limit.
+	This should eventually go in its own module."""
 	def __init__(self):
 		Exception.__init__(self, "A parameter was used with a value over the rate limit.")
 
@@ -13,6 +15,7 @@ class Roll:
 	"""Roll handler for LamiaDMBot"""
 	
 	RATELIMIT = 1000 #Any of a roll's parameters cannot be larger than this
+	REPEATLIMIT = 10 #A roll cannot be repeated any more than this amount
 
 	def __init__(self, rollparams):
 		self.rollparams = rollparams
@@ -20,6 +23,7 @@ class Roll:
 		self.sum = 0 #counts successes in dicepool mode
 		self.fail = 0 #counts failures in dicepool mode, otherwise set to 0
 		self.modifier = 0
+		self.repeat = 1
 		self.fate = False
 		self.exploding = False
 		self.highest = False #TODO: Drop Highest and Drop Lowest modes
@@ -33,6 +37,13 @@ class Roll:
 			roll_multiplier = rollparams.split("d")[0]
 			roll_basedie = rollparams.split("d")[1]
 			#Let's start parsing the roll
+
+			if len(roll_basedie.split("&")) != 1: #How many repeats?
+				self.repeat = int(roll_basedie.split("&")[1])
+				if self.repeat > self.REPEATLIMIT:
+					raise ValueOverRatelimit()
+				roll_basedie = roll_basedie.split("&")[0] #Pass the rest
+
 			#Is the very last character '!'? Exploding dice
 			if rollparams.endswith("!"):
 				self.exploding = True
