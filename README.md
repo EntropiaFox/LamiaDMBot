@@ -8,7 +8,7 @@ Python 2.7 and [python-telegram-bot](https://github.com/python-telegram-bot/pyth
 
 ### Instructions
 
-Something to write up at some point, ey? For now, make sure to set the TOKEN variable in the lamia.cfg file to your own token (As obtained from [BotFather](https://core.telegram.org/bots)). Setting a password allows you to restrict bot registration to those who know the secret value only.
+Something to write up at some point, ey? For now, make sure to set the TOKEN variable in the lamia.cfg file to your own token (As obtained from [BotFather](https://core.telegram.org/bots)). You may also pass as a parameter the path and filename to your config file, otherwise LamiaDMBot will look or generate one in its working directory.
 
 ### License
 

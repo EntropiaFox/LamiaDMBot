@@ -11,7 +11,7 @@ bot.
 """
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import logging, sqlite3, ConfigParser, os
+import logging, sqlite3, ConfigParser, os, re, sys
 from roll import *
 from storage import *
 from char import *
@@ -26,50 +26,43 @@ logger = logging.getLogger(__name__)
 #Token declaration
 TOKEN = "TOKEN"
 
-#Optional secret declaration, so only those who know it may use the bot
-SECRET = ""
+#Default database path
+DBPATH = "lamia.db"
 
 #Version information
-VERSION = "v0.5.3unstable"
+VERSION = "v0.5.4"
 
 # Define a few helper functions
 
 def readconfig(config_filename='lamia.cfg'):
+	global TOKEN, DBPATH
 	config = ConfigParser.ConfigParser()
 	if not os.path.isfile(config_filename): #if the config file doesn't exist already, we'll create one
+		logger.info("Creating a new config file and exiting immediately. Make sure to replace the default token value with your own!")
 		config_file = open(config_filename, 'w')
 		config.add_section('main')
-		config.set('main', 'TOKEN', 'TOKEN')
-		config.set('main', 'SECRET', '')
+		config.set('main', 'token', 'TOKEN')
+		config.set('main', 'dbpath', DBPATH)
 		config.set('main', 'ratelimit', '1000')
 		config.write(config_file)
 		config_file.close()
+		sys.exit()
 	else:
-		global TOKEN, SECRET
 		config.read(config_filename)
 		#logger.info("Read token: %s", config.get('main', 'token'))
 		TOKEN = config.get('main', 'token')
-		SECRET = config.get('main', 'secret')
+		DBPATH = config.get('main', 'dbpath')
 	return config
 
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update, args):
-	bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.' \
-	+ (" A password has been set in order to register with this bot, please ask the maintainer about it." if SECRET else ""))
-	# If secret is not set, register unconditionally. If secret is set, register when user knows said secret
-	if SECRET == "":
-		db = LamiaDB()
-		if db.register_user(update.message.from_user.id):
-			bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
-		db.conn.close()
-	elif len(args) > 0:
-		if args[0] == SECRET:
-			db = LamiaDB()
-			if db.register_user(update.message.from_user.id):
-				bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
-			db.conn.close()
+	db = LamiaDB(DBPATH)
+	bot.sendMessage(update.message.chat_id, text='Hiya! Type /help to get a list of all my actions.')
+	if db.register_user(update.message.from_user.id):
+		bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
+	db.conn.close()
 
 def help(bot, update):
 	bot.sendMessage(update.message.chat_id, text="""/start Secret - Allows you to register with the bot. A password may have been specified by the bot's maintainer.
@@ -95,10 +88,36 @@ The bot supports FATE-style dice. In order to use them, use the xdF notation. Fo
 /delattr CharacterName Attributename - Deletes the given character's attribute.
 /about - Shows the bot's current running version and copyright info.""")
 
+#Define some testing functions
+def fullnewchar(bot, update, args):
+	# First argument: character identifier
+	# Second argument: character name (between double quotes)
+	# Third argument: campaign name (between double quotes)
+	# Fourth argument: campaign system (between double quotes)
+
+	args_str = ' '.join(args)
+	pattern = r'\"(.+?)\"'
+	matches = re.findall(pattern, args_str)
+	pass
+
+def newdesc(bot, update, args):
+	db = LamiaDB(DBPATH)
+	userid = update.message.from_user.id
+	args_str = ' '.join(args)
+	pattern_quotetext = r'\"(.+?)\"'
+	pattern_url = r'^(?:(?:https?|ftp)://)(?:\S+(?::\S*)?@)?(?:(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:/[^\s]*)?$'
+	pass
+
+#The rest
+
+def desc(bot, update, args):
+	pass
+
+def deldesc(bot, update, args):
+	pass
 
 def echo(bot, update):
 	bot.sendMessage(update.message.chat_id, text=update.message.text)
-
 
 def error(bot, update, error):
 	logger.warn('Update "%s" caused error "%s"' % (update, error))
@@ -128,7 +147,7 @@ def rolldie(bot, update, args):
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 
 def aroll(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	#First, we'll test if it's a valid roll outright
 	if Roll.is_valid_roll(args[0]):
@@ -153,7 +172,7 @@ def aroll(bot, update, args):
 	db.conn.close()
 
 def droll(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	#First, we'll test if it's a valid roll outright
 	if Roll.is_valid_roll(args[0]):
@@ -178,7 +197,7 @@ def droll(bot, update, args):
 	db.conn.close()
 
 def storedroll(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	#check in which case we're in: is there a single argument?
 	if len(args) == 1: #single argument
@@ -212,14 +231,14 @@ def storedroll(bot, update, args):
 	db.conn.close()
 
 def listroll(bot, update):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	roll_list = db.fetch_all_rolls(userid).keys()
 	bot.sendMessage(update.message.chat_id, text="Your stored rolls: " + ' '.join(map(str, roll_list)), reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
 def delroll(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	if len(args) == 1: #command takes a single argument
 		sroll_name = args[0]
@@ -232,7 +251,7 @@ def delroll(bot, update, args):
 	db.conn.close()
 
 def char(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	if len(args) == 1: #command takes a single argument
 		charname = args[0]
@@ -251,7 +270,7 @@ def char(bot, update, args):
 
 
 def newchar(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	if len(args) >= 1: #command takes at least one argument
 		charname = args[0]
@@ -272,13 +291,13 @@ def newchar(bot, update, args):
 
 
 def listchar(bot, update):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	character_list = db.fetch_all_characters(userid)
 	bot.sendMessage(update.message.chat_id, text="Your characters: " + ' '.join(map(str, character_list)), reply_to_message_id=update.message.message_id)
 
 def charattr(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	if len(args) >= 3: #command takes at least three arguments
 		charname = args[0]
@@ -295,7 +314,7 @@ def charattr(bot, update, args):
 	db.conn.close()
 
 def delchar(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	if len(args) == 1: #command takes a single argument
 		if not db.delete_character(userid, args[0]):
@@ -308,7 +327,7 @@ def delchar(bot, update, args):
 
 
 def delcharattr(bot, update, args):
-	db = LamiaDB()
+	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
 	if len(args) == 2: #command takes three arguments
 		if db.remove_attribute(userid, args[0], args[1]):
@@ -326,7 +345,11 @@ def aboutbot(bot, update):
 def main():
 	try:
 		# Read the configuration for the bot
-		config = readconfig()
+		if(len(sys.argv) >= 2 and sys.argv[1]):
+			logger.info("Loading up config: %s", sys.argv[1])
+			config = readconfig(sys.argv[1]) # Takes config path optionally as an argument
+		else:
+			config = readconfig()
 
 		# Create the EventHandler and pass it your bot's token.
 		updater = Updater(TOKEN)

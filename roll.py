@@ -15,7 +15,7 @@ class Roll:
 	"""Roll handler for LamiaDMBot"""
 	
 	RATELIMIT = 1000 #Any of a roll's parameters cannot be larger than this
-	REPEATLIMIT = 10 #A roll cannot be repeated any more than this amount
+	REPEATLIMIT = 50 #A roll cannot be repeated any more than this amount
 
 	def __init__(self, rollparams):
 		self.rollparams = rollparams

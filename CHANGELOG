@@ -1,3 +1,8 @@
+v0.5.4
+- Removed the secret option for now. If you don't want others to use your bot's instance for the time being, give it an inconspicuous name!
+- Upgraded to python-telegram-bot v5.3.0 although the v5.0.0 release should still be fine.
+- Added the capacity for the bot to take a path to a config file as a parameter. Woo, now it's looking like a real application!
+
 v0.5.0
 - Added two new commands: /aroll (Roll with advantage) or /droll (Roll with disadvantage). You may use stored rolls with these commands as well.
 - Slight display changes: The bot will now quote any message with a valid command, and it'll display the roll's notation alongside its result.
