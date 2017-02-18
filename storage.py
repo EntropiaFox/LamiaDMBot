@@ -260,6 +260,7 @@ class LamiaDB():
 		"""Deletes a given character's attribute, returning True if it was a success and False if it wasn't."""
 		try:
 			cur = self.conn.cursor()
+			current_character = self.character_id_from_name(userid, charactername)
 			t = (attributename, current_character, )
 			cur.execute('begin')
 			cur.execute('DELETE FROM attributes WHERE attributename=? AND characters_id=?', t)

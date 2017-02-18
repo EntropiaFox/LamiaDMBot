@@ -30,7 +30,7 @@ TOKEN = "TOKEN"
 DBPATH = "lamia.db"
 
 #Version information
-VERSION = "v0.5.4"
+VERSION = "v0.5.5dev"
 
 # Define a few helper functions
 

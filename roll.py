@@ -115,7 +115,7 @@ class Roll:
 							self.fail+=1
 				elif self.rollunder:
 					for i in self.result:
-						if i <= self.rollover:
+						if i <= self.rollunder:
 							self.sum+=1 
 						else:
 							self.fail+=1
