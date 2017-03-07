@@ -8,6 +8,7 @@ import random
 class ValueOverRatelimit(Exception):
 	"""Exception returned whenever a parameter (Number of dice, dice sides, etc.) goes over the rate limit.
 	This should eventually go in its own module."""
+
 	def __init__(self):
 		Exception.__init__(self, "A parameter was used with a value over the rate limit.")
 
@@ -136,4 +137,4 @@ class Roll:
 			return False
 
 if __name__ == '__main__':
-    print "This is not meant to be used directly! Run 'main.py' instead."
+	print "This is not meant to be used directly! Run 'main.py' instead."

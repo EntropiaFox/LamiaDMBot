@@ -5,7 +5,11 @@
 
 import os, sqlite3, logging
 
-class LamiaDB():
+# Current database version (To be used in future updates for automated migrations
+
+DBVER = (4, )
+
+class LamiaDB:
 	"""Database handler for LamiaDMBot"""
 
 	def __init__(self, dbname='lamia.db'):
@@ -25,11 +29,15 @@ class LamiaDB():
 			self.conn.isolation_level = None #Hahahaha REAL FUCKING FUNNY PYTHON
 			cur = self.conn.cursor()
 			cur.execute('PRAGMA foreign_keys = ON')
+			cur.execute('CREATE TABLE config (version integer)')
+			cur.execute('INSERT INTO config (version) VALUES (?)', DBVER)
 			cur.execute('CREATE TABLE users (userid integer primary key)')
-			cur.execute('CREATE TABLE rolls (id integer primary key autoincrement, name text not null, roll text not null, users_id integer, foreign key(users_id) references users(userid))')
-			cur.execute('CREATE TABLE characters (id integer primary key autoincrement, name text not null, users_id integer, foreign key(users_id) references users(userid))')
-			cur.execute('CREATE TABLE attributes (id integer primary key autoincrement, attributename text not null, attributevalue text, characters_id integer, foreign key(characters_id) references characters(id))')
+			cur.execute('CREATE TABLE rolls (id integer primary key autoincrement, users_id integer, name text not null, roll text not null, foreign key(users_id) references users(userid))')
+			cur.execute('CREATE TABLE characters (id integer primary key autoincrement, users_id integer, name text not null, foreign key(users_id) references users(userid))')
+			cur.execute('CREATE TABLE attributes (id integer primary key autoincrement, characters_id integer, attributename text not null, attributevalue text, foreign key(characters_id) references characters(id))')
 			cur.execute('CREATE TABLE places (id integer primary key autoincrement, users_id integer, placeshortname text not null, placename text, placedesc text, placeurl text, foreign key(users_id) references users(userid))')
+			cur.execute('CREATE TABLE rolltables (id integer primary key autoincrement, users_id integer, name text not null, is_public integer not null, foreign key(users_id) references users(userid))')
+			cur.execute('CREATE TABLE rolltable_entries (id integer primary key autoincrement, rolltables_id integer, description text not null, rangemin integer not null, rangemax integer not null, foreign key(rolltables_id) references rolltables(id))')
 			self.conn.commit()
 			self.logger.info("Done.")
 		else:
@@ -327,4 +335,4 @@ class LamiaDB():
 			return False
 
 if __name__ == '__main__':
-    print "This is not meant to be used directly! Run 'main.py' instead."
+	print "This is not meant to be used directly! Run 'main.py' instead."

@@ -23,16 +23,17 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-#Token declaration
+# Token declaration
 TOKEN = "TOKEN"
 
-#Default database path
+# Default database path
 DBPATH = "lamia.db"
 
-#Version information
+# Version information
 VERSION = "v0.5.5dev"
 
 # Define a few helper functions
+
 
 def readconfig(config_filename='lamia.cfg'):
 	global TOKEN, DBPATH
@@ -49,7 +50,7 @@ def readconfig(config_filename='lamia.cfg'):
 		sys.exit()
 	else:
 		config.read(config_filename)
-		#logger.info("Read token: %s", config.get('main', 'token'))
+		# logger.info("Read token: %s", config.get('main', 'token'))
 		TOKEN = config.get('main', 'token')
 		DBPATH = config.get('main', 'dbpath')
 	return config
@@ -63,6 +64,7 @@ def start(bot, update, args):
 	if db.register_user(update.message.from_user.id):
 		bot.sendMessage(update.message.chat_id, text='New user registered. Now you can store rolls and characters!')
 	db.conn.close()
+
 
 def help(bot, update):
 	bot.sendMessage(update.message.chat_id, text="""/start Secret - Allows you to register with the bot. A password may have been specified by the bot's maintainer.
@@ -88,7 +90,9 @@ The bot supports FATE-style dice. In order to use them, use the xdF notation. Fo
 /delattr CharacterName Attributename - Deletes the given character's attribute.
 /about - Shows the bot's current running version and copyright info.""")
 
-#Define some testing functions
+# Define some testing functions
+
+
 def fullnewchar(bot, update, args):
 	# First argument: character identifier
 	# Second argument: character name (between double quotes)
@@ -100,6 +104,7 @@ def fullnewchar(bot, update, args):
 	matches = re.findall(pattern, args_str)
 	pass
 
+
 def newdesc(bot, update, args):
 	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
@@ -110,17 +115,22 @@ def newdesc(bot, update, args):
 
 #The rest
 
+
 def desc(bot, update, args):
 	pass
+
 
 def deldesc(bot, update, args):
 	pass
 
+
 def echo(bot, update):
 	bot.sendMessage(update.message.chat_id, text=update.message.text)
 
+
 def error(bot, update, error):
 	logger.warn('Update "%s" caused error "%s"' % (update, error))
+
 
 def rolldie(bot, update, args):
 	roll = Roll(args[0])
@@ -145,6 +155,7 @@ def rolldie(bot, update, args):
 			bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
+
 
 def aroll(bot, update, args):
 	db = LamiaDB(DBPATH)
@@ -171,6 +182,7 @@ def aroll(bot, update, args):
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
+
 def droll(bot, update, args):
 	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
@@ -195,6 +207,7 @@ def droll(bot, update, args):
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid roll.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
+
 
 def storedroll(bot, update, args):
 	db = LamiaDB(DBPATH)
@@ -230,6 +243,7 @@ def storedroll(bot, update, args):
 	#bot.sendMessage(update.message.chat_id, text=' '.join(args))
 	db.conn.close()
 
+
 def listroll(bot, update):
 	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
@@ -249,6 +263,7 @@ def delroll(bot, update, args):
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
+
 
 def char(bot, update, args):
 	db = LamiaDB(DBPATH)
@@ -296,6 +311,7 @@ def listchar(bot, update):
 	character_list = db.fetch_all_characters(userid)
 	bot.sendMessage(update.message.chat_id, text="Your characters: " + ' '.join(map(str, character_list)), reply_to_message_id=update.message.message_id)
 
+
 def charattr(bot, update, args):
 	db = LamiaDB(DBPATH)
 	userid = update.message.from_user.id
@@ -312,6 +328,7 @@ def charattr(bot, update, args):
 	else:
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
+
 
 def delchar(bot, update, args):
 	db = LamiaDB(DBPATH)
@@ -338,9 +355,11 @@ def delcharattr(bot, update, args):
 		bot.sendMessage(update.message.chat_id, text="Error: Invalid number of arguments.", reply_to_message_id=update.message.message_id)
 	db.conn.close()
 
+
 def aboutbot(bot, update):
 	bot.sendMessage(update.message.chat_id, text="LamiaDMBot " + VERSION + "\nBy EntropiaFox\nReleased under the terms of the GPL v3 License", \
 		reply_to_message_id=update.message.message_id)
+
 
 def main():
 	try:
