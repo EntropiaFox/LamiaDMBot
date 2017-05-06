@@ -45,6 +45,8 @@ class LamiaDB:
 			self.conn.execute('PRAGMA foreign_keys = ON')
 			self.conn.isolation_level = None #Hahahaha REAL, REAL FUCKING FUNNY PYTHON
 
+	# Users section
+
 	def is_user_registered(self, userid):
 		"""Returns True if the user with specified userid is already registered, otherwise it
 		returns False"""
@@ -75,6 +77,8 @@ class LamiaDB:
 			self.logger.exception("Exception in call to 'register_user'")
 			self.conn.rollback()
 			return False
+
+	# Rolls section
 
 	def is_roll_registered(self, userid, rollname):
 		"""Returns True if a given roll has already been registered in the database, otherwise
@@ -144,6 +148,34 @@ class LamiaDB:
 			self.conn.rollback()
 			return False
 
+	# Rolltables section
+
+	def is_rolltable_registered(self, userid, rolltablename):
+		pass
+
+	def is_public_rolltable_registered(self, rolltablename):
+		pass
+
+	def fetch_rolltable(self, userid, rolltablename):
+		pass
+
+	def fetch_public_rolltable(self, rolltablename):
+		pass
+
+	def register_rolltable(self, userid, rolltablename, entries):
+		pass
+
+	def change_rolltable(self, userid, rolltablename):
+		pass
+
+	def delete_rolltable(self, userid, rolltablename):
+		pass
+
+	def rolltable_id_from_name(self, rolltablename):
+		pass
+
+	# Characters section
+
 	def is_character_registered(self, userid, charactername):
 		"""Returns True if the character with specified associated userid is already registered, 
 		otherwise it returns False"""
@@ -207,7 +239,6 @@ class LamiaDB:
 		cur.execute('SELECT id FROM characters WHERE users_id=? AND name=?', t) #First, we'll get the character's id
 		current_character = cur.fetchone()
 		return current_character[0]
-
 
 	def delete_character(self, userid, charactername):
 		"""Removes a character belonging to a given user, returning True if it was a success or False if it wasn't."""
@@ -278,6 +309,8 @@ class LamiaDB:
 			self.logger.exception("Exception in call to 'remove_attribute'")
 			self.conn.rollback()
 			return False
+
+	# Places section
 
 	def is_place_registered(self, userid, placeshortname):
 		"""Returns True if the place with specified associated userid is already registered, 

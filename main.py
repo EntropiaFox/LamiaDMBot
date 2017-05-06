@@ -30,7 +30,7 @@ TOKEN = "TOKEN"
 DBPATH = "lamia.db"
 
 # Version information
-VERSION = "v0.5.5dev"
+VERSION = "v0.5.6"
 
 # Define a few helper functions
 
@@ -113,8 +113,6 @@ def newdesc(bot, update, args):
 	pattern_url = r'^(?:(?:https?|ftp)://)(?:\S+(?::\S*)?@)?(?:(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:/[^\s]*)?$'
 	pass
 
-#The rest
-
 
 def desc(bot, update, args):
 	pass
@@ -122,6 +120,9 @@ def desc(bot, update, args):
 
 def deldesc(bot, update, args):
 	pass
+
+
+#The rest
 
 
 def echo(bot, update):
@@ -148,6 +149,8 @@ def rolldie(bot, update, args):
 				" (" + ("+" if (roll.modifier > 0) else "") + \
 				str(roll.modifier) + ") \n" + str(roll.sum) + " successes, " + str(roll.fail) + " failures."
 			roll = Roll(args[0])
+			if roll.optwarnings:
+				msg = (roll.optwarnings + "\n") + msg
 			msg += "\n"
 		if len(msg) < 4096: #The maximum message size in Telegram
 			bot.sendMessage(update.message.chat_id, text=msg, reply_to_message_id=update.message.message_id)
@@ -250,6 +253,7 @@ def listroll(bot, update):
 	roll_list = db.fetch_all_rolls(userid).keys()
 	bot.sendMessage(update.message.chat_id, text="Your stored rolls: " + ' '.join(map(str, roll_list)), reply_to_message_id=update.message.message_id)
 	db.conn.close()
+
 
 def delroll(bot, update, args):
 	db = LamiaDB(DBPATH)
