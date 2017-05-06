@@ -34,6 +34,7 @@ class Roll:
 		self.keep = 0
 		self.rollover = 0
 		self.rollunder = 0
+		self.optwarnings = ""
 		try:
 			roll_multiplier = rollparams.split("d")[0]
 			roll_basedie = rollparams.split("d")[1]
@@ -51,17 +52,17 @@ class Roll:
 				roll_basedie = roll_basedie[:-1]
 
 			#Does the last element have a modifier? Add it and remove it from the string
-			if ("+" in roll_basedie):
+			if "+" in roll_basedie:
 				self.modifier = int(roll_basedie.split("+")[1])
 				roll_basedie = roll_basedie.split("+")[0]
-			elif ("-" in roll_basedie):
+			elif "-" in roll_basedie:
 				self.modifier = int(roll_basedie.split("-")[1])*(-1)
 				roll_basedie = roll_basedie.split("-")[0]
 
-			if (">" in roll_basedie): #We're in roll over/roll under mode
+			if ">" in roll_basedie: #We're in roll over/roll under mode
 				self.rollover = int(roll_basedie.split(">")[1])
 				roll_basedie = roll_basedie.split(">")[0]
-			elif ("<" in roll_basedie):
+			elif "<" in roll_basedie:
 				self.rollunder = int(roll_basedie.split("<")[1])
 				roll_basedie = roll_basedie.split("<")[0]
 
@@ -75,7 +76,7 @@ class Roll:
 				roll_basedie = roll_basedie.split("D")[0]
 
 			#Before attempting to cast as integers, are we using FATE-style dice?
-			if("F" in roll_basedie):
+			if "F" in roll_basedie:
 				roll_multiplier = int(roll_multiplier)
 				roll_basedie = 6
 				self.fate = True
@@ -86,8 +87,12 @@ class Roll:
 			if (roll_multiplier > self.RATELIMIT) or (roll_basedie > self.RATELIMIT):
 			#Values over the rate limit shall raise an exception
 				raise ValueOverRatelimit()
+			#Exploding dice with a size of one are considered invalid as to prevent things seizing up
+			if roll_basedie == 1 and self.exploding:
+				raise ValueOverRatelimit()
 
 			x = 0
+			dice_explosions = 0
 
 			while x < roll_multiplier:
 				if self.fate:
@@ -95,7 +100,12 @@ class Roll:
 				else:
 					self.result.append(random.randint(1, roll_basedie))
 				if (self.result[-1] == roll_basedie) and (self.exploding == True):
-					roll_multiplier+=1
+					#Prevent far too many dice explosions that might cause the bot to seize up
+					if dice_explosions <= self.RATELIMIT:
+						roll_multiplier+=1
+						dice_explosions+=1
+					else:
+						self.optwarnings = "Warning: Exploding dice total above rate limit!"
 				x+=1
 
 			if self.drop != 0: #There's a Drop operation to be done
@@ -135,6 +145,14 @@ class Roll:
 				return False
 		except:
 			return False
+
+class Rolltable:
+	"""Roll table handler for LamiaDMBot"""
+	ENTRYLIMIT = 20 #The roll table must not contain more than this number of entries
+
+	def __init__(self, rollparams, **kwargs):
+		self.roll = Roll(rollparams)
+		self.rolltableparams=kwargs
 
 if __name__ == '__main__':
 	print "This is not meant to be used directly! Run 'main.py' instead."
