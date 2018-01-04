@@ -7,7 +7,7 @@ import os, sqlite3, logging
 
 # Current database version (To be used in future updates for automated migrations
 
-DBVER = (4, )
+DBVER = (5, )
 
 class LamiaDB:
 	"""Database handler for LamiaDMBot"""
@@ -32,12 +32,24 @@ class LamiaDB:
 			cur.execute('CREATE TABLE config (version integer)')
 			cur.execute('INSERT INTO config (version) VALUES (?)', DBVER)
 			cur.execute('CREATE TABLE users (userid integer primary key)')
-			cur.execute('CREATE TABLE rolls (id integer primary key autoincrement, users_id integer, name text not null, roll text not null, foreign key(users_id) references users(userid))')
-			cur.execute('CREATE TABLE characters (id integer primary key autoincrement, users_id integer, name text not null, foreign key(users_id) references users(userid))')
-			cur.execute('CREATE TABLE attributes (id integer primary key autoincrement, characters_id integer, attributename text not null, attributevalue text, foreign key(characters_id) references characters(id))')
-			cur.execute('CREATE TABLE places (id integer primary key autoincrement, users_id integer, placeshortname text not null, placename text, placedesc text, placeurl text, foreign key(users_id) references users(userid))')
-			cur.execute('CREATE TABLE rolltables (id integer primary key autoincrement, users_id integer, name text not null, is_public integer not null, foreign key(users_id) references users(userid))')
-			cur.execute('CREATE TABLE rolltable_entries (id integer primary key autoincrement, rolltables_id integer, description text not null, rangemin integer not null, rangemax integer not null, foreign key(rolltables_id) references rolltables(id))')
+			cur.execute('CREATE TABLE rolls (id integer primary key autoincrement, users_id integer, name text not null,'
+						' roll text not null, constraint fk_rolls_users foreign key(users_id)'
+						' references users(userid) on delete cascade)')
+			cur.execute('CREATE TABLE characters (id integer primary key autoincrement, users_id integer, '
+						' name text not null, constraint fk_characters_users foreign key(users_id) references'
+						' users(userid) on delete cascade)')
+			cur.execute('CREATE TABLE attributes (id integer primary key autoincrement, characters_id integer, '
+						' attributename text not null, attributevalue text, constraint fk_attributes_characters '
+						' foreign key(characters_id) references characters(id) on delete cascade)')
+			cur.execute('CREATE TABLE places (id integer primary key autoincrement, users_id integer, '
+						' placeshortname text not null, placename text, placedesc text, placeurl text, '
+						' constraint fk_places_users foreign key(users_id) references users(userid) on delete cascade)')
+			cur.execute('CREATE TABLE rolltables (id integer primary key autoincrement, users_id integer, '
+						' name text not null, is_public integer not null, constraint fk_rolltables_users '
+						' foreign key(users_id) references users(userid) on delete cascade)')
+			cur.execute('CREATE TABLE rolltable_entries (id integer primary key autoincrement, rolltables_id integer, '
+						' description text not null, rangemin integer not null, rangemax integer not null, '
+						' constraint fk_rolltable_entries_rolltables foreign key(rolltables_id) references rolltables(id) on delete cascade)')
 			self.conn.commit()
 			self.logger.info("Done.")
 		else:
@@ -54,7 +66,7 @@ class LamiaDB:
 		t = (userid, )
 		cur.execute('SELECT * FROM users WHERE userid=?', t)
 		retrieved_user = cur.fetchone()
-		if not (retrieved_user == None): #No such user
+		if not (retrieved_user is None): #No such user
 			return True
 		else:
 			return False
@@ -87,7 +99,7 @@ class LamiaDB:
 		t = (userid, rollname, )
 		cur.execute('SELECT * FROM rolls WHERE users_id=? AND name=?', t)
 		retrieved_roll = cur.fetchone()
-		if not (retrieved_roll == None):
+		if retrieved_roll is not None:
 			return True
 		else:
 			return False
@@ -171,8 +183,21 @@ class LamiaDB:
 	def delete_rolltable(self, userid, rolltablename):
 		pass
 
-	def rolltable_id_from_name(self, rolltablename):
-		pass
+	def public_rolltable_id_from_name(self, rolltablename):
+		"""Returns a given public rolltable's id if it can be found"""
+		cur = self.conn.cursor()
+		t = (rolltablename, 1, )
+		cur.execute('SELECT id FROM rolltables WHERE name=? AND is_public=?', t)
+		current_rolltable = cur.fetchone()
+		return current_rolltable[0]
+
+	def rolltable_id_from_name(self, userid, rolltablename):
+		"""Returns a given rolltable's id if it can be found"""
+		cur = self.conn.cursor()
+		t = (rolltablename, userid, )
+		cur.execute('SELECT id FROM rolltables WHERE name=? AND users_id=?', t)
+		current_rolltable = cur.fetchone()
+		return current_rolltable[0]
 
 	# Characters section
 
@@ -183,7 +208,7 @@ class LamiaDB:
 		t = (charactername, userid, )
 		cur.execute('SELECT * FROM characters WHERE name=? AND users_id=?', t)
 		retrieved_character = cur.fetchone()
-		if not (retrieved_character == None): #No such character
+		if not (retrieved_character is None): #No such character
 			return True
 		else:
 			return False
@@ -368,4 +393,4 @@ class LamiaDB:
 			return False
 
 if __name__ == '__main__':
-	print "This is not meant to be used directly! Run 'main.py' instead."
+	print ("This is not meant to be used directly! Run 'main.py' instead.")

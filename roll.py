@@ -155,4 +155,4 @@ class Rolltable:
 		self.rolltableparams=kwargs
 
 if __name__ == '__main__':
-	print "This is not meant to be used directly! Run 'main.py' instead."
+	print ("This is not meant to be used directly! Run 'main.py' instead.")

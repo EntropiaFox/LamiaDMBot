@@ -11,7 +11,7 @@ bot.
 """
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import logging, sqlite3, ConfigParser, os, re, sys
+import logging, sqlite3, configparser, os, re, sys
 from roll import *
 from storage import *
 from char import *
@@ -30,14 +30,14 @@ TOKEN = "TOKEN"
 DBPATH = "lamia.db"
 
 # Version information
-VERSION = "v0.5.6"
+VERSION = "v0.6.0"
 
 # Define a few helper functions
 
 
 def readconfig(config_filename='lamia.cfg'):
 	global TOKEN, DBPATH
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	if not os.path.isfile(config_filename): #if the config file doesn't exist already, we'll create one
 		logger.info("Creating a new config file and exiting immediately. Make sure to replace the default token value with your own!")
 		config_file = open(config_filename, 'w')
@@ -67,7 +67,7 @@ def start(bot, update, args):
 
 
 def help(bot, update):
-	bot.sendMessage(update.message.chat_id, text="""/start Secret - Allows you to register with the bot. A password may have been specified by the bot's maintainer.
+	bot.sendMessage(update.message.chat_id, text="""/start Allows you to register with the bot.
 /roll xdy - Rolls X Y-sided dice.
 Other optional arguments, in order of precedence:
 - Add "&" followed by a number to repeat the roll that many times.
